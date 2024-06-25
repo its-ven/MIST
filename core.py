@@ -273,7 +273,7 @@ class Session:
         cycle = literal_eval(cycle_prompt + str(response) + "}}")
 
         Session.history.append(cycle)
-        log(LogType.debug, f"Session Tokens: {self.session_tokens}/{self.working_ctx}")
+        # log(LogType.debug, f"Session Tokens: {self.session_tokens}/{self.working_ctx}")
         session_manager.save_cycle(f"{self._persona_checkpoints_path}/{self.cycles}.json", cycle)
         
         if Session.exit:
