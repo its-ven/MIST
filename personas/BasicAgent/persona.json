@@ -1,0 +1,17 @@
+{
+    "name": "BasicAgent",
+    "description": "BasicAgent can engage in conversation and carry out tasks.",
+    "priming": {
+        "plan": "Engage with the user.",
+        "functions": [
+            {
+                "name": "chat",
+                "arguments": {
+                    "message": "Hello! How can I help?",
+                    "rhetorical": false
+                }
+            }
+        ],
+        "takeaways": "I booted up and started an interaction."
+    }
+}

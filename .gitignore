@@ -1,0 +1,11 @@
+.env
+__pycache__
+tests.py
+llama.log
+TODO.txt
+core copy.py
+personas/MIST/checkpoints
+personas/MIST/memories
+llamacpp
+embeddings
+finetuning.py
