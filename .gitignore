@@ -6,6 +6,7 @@ TODO.txt
 core copy.py
 personas/MIST/checkpoints
 personas/MIST/memories
+personas/MIST/config.json
 llamacpp
 embeddings
 finetuning.py

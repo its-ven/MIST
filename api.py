@@ -219,7 +219,6 @@ def completion(
     load(model)
     params = {}
     params["prompt"] = prompt if skip_formatting else _format_prompt(prompt)
-    print(prompt)
     if kwargs:
         for k, v in kwargs.items():
             if k == "max_tokens":

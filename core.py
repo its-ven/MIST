@@ -238,7 +238,7 @@ class Session:
         if self._is_primed:
             response = self._run(cycle_prompt)
         else:
-            if self.priming_schema != None and Session.history != []:
+            if self.priming_schema != None and Session.history == []:
                 try:
                     response = self.priming_schema
                     self.cycle_tokens[self.cycles] += tokenize(str(response), count=True)
