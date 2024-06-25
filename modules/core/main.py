@@ -1,10 +1,19 @@
 from functions import register
 from utils import log, LogType
 from core import Session
+import time
+import re
+import random
 
 @register("Send a message to the user. If `rhetorical` bool is True, the user won't be asked for a response")
 def chat(message: str, rhetorical: bool = False):
-    log(LogType.response, message, with_prefix=False)
+    pattern = r'([!.?\n]+(?:\.{3})?)'
+    messages = re.split(pattern, message)
+    messages = [entry.strip() for entry in messages if entry.strip()]
+    for entry in messages:
+        log(LogType.response, entry, with_prefix=False)
+        time.sleep(0.7)
+        
     if not rhetorical:
         response = input("> ")
         Session.add_event("User", response)
