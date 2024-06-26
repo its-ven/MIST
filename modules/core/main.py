@@ -11,8 +11,8 @@ def chat(message: str, rhetorical: bool = False):
     messages = re.split(pattern, message)
     messages = [entry.strip() for entry in messages if entry.strip()]
     for entry in messages:
-        log(LogType.response, entry, with_prefix=False)
-        time.sleep(1)
+        log(LogType.response, entry, with_prefix=False, str_as_stream=True)
+        time.sleep(1.5)
         
     if not rhetorical:
         response = input("> ")

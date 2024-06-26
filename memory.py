@@ -3,7 +3,7 @@ from chromadb.config import Settings as ChromaSettings
 from chromadb.utils import embedding_functions
 from chromadb.types import Where, WhereDocument
 from typing import Literal
-from utils import log, LogType, get_dir, get_caller_path
+from utils import log, LogType, get_dir, get_caller_path, _boot_padding
 from huggingface_hub import snapshot_download
 from tqdm.auto import tqdm
 import logging
@@ -73,7 +73,7 @@ class FunctionMemory:
 
 class PersonaMemory:
     def __init__(self, persona_name: str, embedding: Embedding = Embedding.balanced, device: Device = Device.auto):
-        log(LogType.system, f"[Memory] Loading persona memory...")
+        log(LogType.boot_sequence, _boot_padding(f"[Memory] Loading persona memory..."))
         _embedding = _get_embedding(embedding, device)
         self.client = chromadb.PersistentClient(f"./personas/{persona_name}/memories", settings=ChromaSettings(anonymized_telemetry=False))
         self.index = self.client.get_or_create_collection("index", embedding_function=_embedding, metadata={"hnsw:space": "cosine"})

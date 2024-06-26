@@ -9,7 +9,7 @@ from typing import Generator
 from utils import log, LogType
 import traceback
 
-host = f"{settings.llama_host}:{settings.llama_port}"
+host = f"{settings.llama_host}:{str(settings.llama_port)}"
 completion_endpoint = f"{host}/completion"
 chat_endpoint = f"{host}/v1/chat/completions"
 infill_endpoint = f"{host}/infill"

@@ -1,10 +1,9 @@
 from inspect import signature, isfunction
 import os
 import importlib.util
-from utils import log, LogType, kwargs_to_string
+from utils import log, LogType, kwargs_to_string, _boot_padding
 import settings
 from api import SchemaValue
-from ast import literal_eval
 
 registered_modules = {}
 
@@ -79,7 +78,7 @@ def load():
                             }
                             functions.append(function_root)
 
-                    log(LogType.system, f"[Modules] Loaded {module_name.capitalize()}", with_prefix=False)
+                    log(LogType.boot_sequence, _boot_padding(f"[Modules] Loaded {module_name.capitalize()}"), with_prefix=False)
                     registered_modules[module_name] = functions
 
 def get_functions(module_or_specific: str | list = None, for_prompt: bool = False, **kwargs) -> str | list:

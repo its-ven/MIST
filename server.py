@@ -97,7 +97,7 @@ def load(model: Model = Model.core):
             "-m", model[0],
             "--mlock",
             "-ngl", "999", # Bad?
-            "--port", settings.llama_port,
+            "--port", str(settings.llama_port),
             "-v",
             "-c", str(model[1]),
             "-fa",

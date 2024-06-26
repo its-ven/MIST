@@ -319,7 +319,7 @@ def log(log_type: LogType, str_or_generator: str | Generator, with_prefix: bool 
                 logstr = f"{style}{emoji}   {str_or_generator}{Style.RESET_ALL}".strip()
         
         if str_as_stream:
-            stream_text(logstr, stream_speed=stream_speed)
+            stream_text(logstr+"\n", stream_speed=stream_speed)
         else:
             if updatable_str:
                 terminal_width = os.get_terminal_size().columns

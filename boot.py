@@ -16,6 +16,7 @@ if __name__ == "__main__":
             log(LogType.boot_sequence,"      \/_/  \/_/   \/_/   \/_____/     \/_/       ")
             log(LogType.boot_sequence,"                                                  ")
             log(LogType.boot_sequence, _boot_padding(_shuffle_acronym()))
+            log(LogType.boot_sequence, _boot_padding(""))
         if llama_update():
             server.update()
         # Load a persona. Defaults to `DEFAULT_PERSONA` in `.env`
