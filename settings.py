@@ -1,6 +1,7 @@
 from dotenv import load_dotenv, dotenv_values, get_key, set_key
 from datetime import datetime, timedelta
-from utils import Time, get_dir
+from utils import get_dir
+from ast import literal_eval
 
 CONFIG_TEMPLATE = [
     "# Disable splash screen",
@@ -63,26 +64,22 @@ def load():
 load()
 
 config = dotenv_values(".env")
-
-def _get_config_value(key, default=None, parse_func=str):
-    return parse_func(config.get(key, default))
-
-disable_splash = _get_config_value("DISABLE_SPLASH", False, bool)
-llama_build_type = _get_config_value("LLAMA_BUILD_TYPE").replace(".zip", "")
-llama_host = _get_config_value("LLAMA_HOST")
-llama_port = _get_config_value("LLAMA_PORT")
-llama_auto_update = _get_config_value("LLAMA_AUTO_UPDATE", True, bool)
-default_persona = _get_config_value("DEFAULT_PERSONA")
-override_responses = _get_config_value("OVERRIDE_RESPONSES", False, bool)
-long_context_model = _get_config_value("LONG_CONTEXT_MODEL")
-long_context_size = _get_config_value("LONG_CONTEXT_SIZE", 16384, int)
-core_model = _get_config_value("CORE_MODEL")
-core_size = _get_config_value("CORE_SIZE", "8192", int)
-instruct_model = _get_config_value("INSTRUCT_MODEL")
-instruct_size = _get_config_value("INSTRUCT_SIZE", 4096, int)
-disabled_modules = _get_config_value("DISABLED_MODULES", "").split(", ") if config.get("DISABLED_MODULES") else None
-llama_latest_build = _get_config_value("LLAMA_LATEST_BUILD")
-llama_last_check = _get_config_value("LLAMA_LAST_CHECK")
+disable_splash = literal_eval(config.get("DISABLE_SPLASH"))
+llama_build_type = config.get("LLAMA_BUILD_TYPE").replace(".zip", "")
+llama_host = config.get("LLAMA_HOST")
+llama_port = literal_eval(config.get("LLAMA_PORT"))
+llama_auto_update = literal_eval(config.get("LLAMA_AUTO_UPDATE"))
+default_persona = config.get("DEFAULT_PERSONA")
+override_responses = literal_eval(config.get("OVERRIDE_RESPONSES"))
+long_context_model = config.get("LONG_CONTEXT_MODEL")
+long_context_size = literal_eval(config.get("LONG_CONTEXT_SIZE"))
+core_model = config.get("CORE_MODEL")
+core_size = literal_eval(config.get("CORE_SIZE"))
+instruct_model = config.get("INSTRUCT_MODEL")
+instruct_size = literal_eval(config.get("INSTRUCT_SIZE"))
+disabled_modules = literal_eval(config.get("DISABLED_MODULES"))
+llama_latest_build = config.get("LLAMA_LATEST_BUILD")
+llama_last_check = config.get("LLAMA_LAST_CHECK")
 
 def llama_update():
     global llama_last_check, llama_auto_update

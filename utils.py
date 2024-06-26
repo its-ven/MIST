@@ -333,8 +333,8 @@ def log(log_type: LogType, str_or_generator: str | Generator, with_prefix: bool 
 def _shuffle_acronym():
     _m = [
         "Multi-agent",
+        "Modulated",
         "Modular",
-        "Mimetic",
         "Magical",
         "Malleable",
         "Modifiable",
@@ -355,11 +355,11 @@ def _shuffle_acronym():
         "Synthetic",
         "Structured",
         "Semantic",
+        "Source",
+        "Simulated",
         "System",
-        "Self-learning",
-        "Smart",
         "Self-aware",
-        "Simple"
+        "Smart"
     ]
     _t = [
         "Tasker",
@@ -376,7 +376,14 @@ def _shuffle_acronym():
     i = random.randrange(len(_i))
     s = random.randrange(len(_s))
     t = random.randrange(len(_t))
-
+    if m == 1 and i == 3 and s == 3 and t == 7:
+        # Go watch Pantheon :)
+        log(LogType.boot_sequence, _boot_padding(""))
+        log(LogType.boot_sequence, _boot_padding("Evolution tends to move at its own pace,"))
+        log(LogType.boot_sequence, _boot_padding("but it's always in motion."))
+        log(LogType.boot_sequence, _boot_padding("No one can stop the future,"))
+        log(LogType.boot_sequence, _boot_padding("even someone determined to bring it about."))
+        log(LogType.boot_sequence, _boot_padding(""))
     return f"[{_m[m]} {_i[i]} {_s[s]} {_t[t]}]"
 
 def _boot_padding(string: str):

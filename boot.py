@@ -9,13 +9,13 @@ import sys
 if __name__ == "__main__":
     try:
         if not disable_splash:
-            log(LogType.boot_sequence,"     __    __     __     ______     ______        ", is_stream=False)
-            log(LogType.boot_sequence,"    /\ \"-./  \   /\ \   /\  ___\   /\__  _\\       ", is_stream=False)
-            log(LogType.boot_sequence,"    \ \ \-./\ \  \ \ \  \ \___  \  \/_/\ \/       ", is_stream=False)
-            log(LogType.boot_sequence,"     \ \_\ \ \_\  \ \_\  \/\_____\    \ \_\\       ", is_stream=False)
-            log(LogType.boot_sequence,"      \/_/  \/_/   \/_/   \/_____/     \/_/       ", is_stream=False)
-            log(LogType.boot_sequence,"                                                  ", is_stream=False)
-            log(LogType.boot_sequence, _boot_padding(_shuffle_acronym()), is_stream=False)
+            log(LogType.boot_sequence,"     __    __     __     ______     ______        ")
+            log(LogType.boot_sequence,"    /\ \"-./  \   /\ \   /\  ___\   /\__  _\\       ")
+            log(LogType.boot_sequence,"    \ \ \-./\ \  \ \ \  \ \___  \  \/_/\ \/       ")
+            log(LogType.boot_sequence,"     \ \_\ \ \_\  \ \_\  \/\_____\    \ \_\\       ")
+            log(LogType.boot_sequence,"      \/_/  \/_/   \/_/   \/_____/     \/_/       ")
+            log(LogType.boot_sequence,"                                                  ")
+            log(LogType.boot_sequence, _boot_padding(_shuffle_acronym()))
         if llama_update():
             server.update()
         # Load a persona. Defaults to `DEFAULT_PERSONA` in `.env`

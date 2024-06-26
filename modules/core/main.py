@@ -7,12 +7,12 @@ import random
 
 @register("Send a message to the user. If `rhetorical` bool is True, the user won't be asked for a response")
 def chat(message: str, rhetorical: bool = False):
-    pattern = r'([!.?\n]+(?:\.{3})?)'
+    pattern = r'(?<=[!.?])\s+(?=[A-Z])|(?<=\n)'
     messages = re.split(pattern, message)
     messages = [entry.strip() for entry in messages if entry.strip()]
     for entry in messages:
         log(LogType.response, entry, with_prefix=False)
-        time.sleep(0.7)
+        time.sleep(1)
         
     if not rhetorical:
         response = input("> ")
