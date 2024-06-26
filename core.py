@@ -5,21 +5,22 @@ from persona import Persona
 from ast import literal_eval
 from memory import PersonaMemory
 import session_manager
-from settings import core_size, override_responses
+from settings import core_size
 import json
 import sys
 
 class Session:
     def __init__(self, persona: Persona, toolkit: Toolkit = None):
-        self.persona = persona
         self.profile = persona.get_profile()
         self.name = persona.get_profile('name')
-        self.tweak_response = False
+        self.override_responses = False
         self.cycles = 0
         self.session_tokens = 0
         self.working_ctx = int(core_size)
         self.priming_schema = persona.get_profile("priming")
         self.cycle_tokens = {}
+        Session.persona = persona
+        Session.session_count = persona.config["session_count"]
         Session.exit = False
         Session.history = []
         Session.cycle_events = []
@@ -79,7 +80,7 @@ class Session:
             pass
         
         if self.priming_schema is None:
-            if override_responses:
+            if self.override_responses:
                 log(LogType.warning, "No priming schema! You may need to override the first few responses.")
             else:
                 log(LogType.warning, "No priming schema or manual override! Results may be unpredictable.")
@@ -96,6 +97,9 @@ class Session:
 
     @classmethod
     def quit(cls):
+        if cls.session_summary != []:
+            cls.memory.append_summary(cls.session_count, cls.session_summary)
+        cls.persona.set_session_count()
         cls.exit = True
 
     def _prompt(self):
@@ -128,19 +132,20 @@ class Session:
             `functions` (schema array): Each schema entry contains two keys: `name` (the name of the Python function) and `arguments` (the schema containing key-value pairs for each argument in the function)
             `takeaways` (string): A description of what happened this cycle, your thoughts, and what you've learned.
             ---
-            # NOTES
-            - **Events from 'Self' are events from your own code**.
-            - You provide cognitive responses as JSON schemas. See the 'JSON Template' section for details.
-            - The total collection of summaries will act as your reminder of any previous session cycles that don't fit in your active memory context.
-            - Ensure you are providing all required arguments for selected functions.
-            - Keep your focus!
-            ---
             # FUNCTION EXAMPLE
             Let's take an example function, `foo(bar: str)`. In this example, your `functions` key would look like this:
             ```
             "functions": [{{"name": "foo", "arguments": {{"bar": "some string value"}}}}]  
             ```
             💡 Hint: You can invoke multiple functions at once, **but be mindful of the order of execution**!
+            ---
+            # NOTES
+            - **Events from 'Self' are events from your own code**.
+            - You provide cognitive responses as JSON schemas. See the 'JSON Template' section for details.
+            - The total collection of summaries will act as your reminder of any previous session cycles that don't fit in your active memory context.
+            - Ensure you are providing the corresponding arguments for each selected function.
+            - **If a function has no arguments, provide an empty `arguments` schema for the corresponding function.**
+            - Keep your focus!
             ---
             {summary}
             Current activity:
@@ -202,7 +207,7 @@ class Session:
                 v = json.dumps(v, ensure_ascii=False)
                 log(LogType.think, f"{k.capitalize()}: {v}", with_prefix=False)
 
-            if self.tweak_response:
+            if self.override_responses:
                 action = input("Press 'r' to regenerate, 'o' to override, any to continue:\n> ").casefold()
                 if action == "r":
                     log(LogType.system, "Penalizing tokens...")
@@ -226,8 +231,8 @@ class Session:
             self.cycle_tokens[self.cycles] += int(specials["tokens_predicted"])
             return response
             
-    def parse(self, tweak_response: bool = False):
-        self.tweak_response = tweak_response
+    def parse(self, override_responses: bool = False):
+        self.override_responses = override_responses
         self.cycles += 1
         events = json.dumps(Session.cycle_events)
         # Create incomplete schema for AI completion
@@ -252,7 +257,6 @@ class Session:
         # Check if we're past ctx limit, remove as many cycles as needed to clear ctx window
         if self._ctx_limit():
             while self._ctx_limit():
-                print(self.session_tokens, self.working_ctx)
                 oldest = Session.history.pop(0)
                 cycle = list(oldest.keys())[0]
                 self.session_summary.append(oldest[cycle]["cognitive_response"]["takeaways"])
@@ -280,4 +284,4 @@ class Session:
             session_manager.save_history(Session.persona_path, Session.history)
             sys.exit()
         else:
-            self.parse(tweak_response=tweak_response)
+            self.parse(override_responses=override_responses)

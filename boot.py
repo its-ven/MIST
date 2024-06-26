@@ -4,7 +4,7 @@ from functions import Toolkit
 from persona import Persona
 import traceback
 from utils import log, LogType, _boot_padding, _shuffle_acronym
-from settings import llama_update, disable_splash
+from settings import llama_update, disable_splash, override_responses
 import sys
 if __name__ == "__main__":
     try:
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         # Init
         session.add_event("Self", f"Boot sequence complete! Last boot date: {persona.config['last_boot']}.")
         persona.set_last_boot()
-        session.parse(tweak_response=True)
+        session.parse(override_responses=override_responses)
     except SystemExit:
         pass
     except:

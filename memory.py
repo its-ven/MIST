@@ -78,8 +78,8 @@ class PersonaMemory:
         self.client = chromadb.PersistentClient(f"./personas/{persona_name}/memories", settings=ChromaSettings(anonymized_telemetry=False))
         self.index = self.client.get_or_create_collection("index", embedding_function=_embedding, metadata={"hnsw:space": "cosine"})
 
-    def append_session_events(self, session_id: int, content: list):
-        for entry in content:
+    def append_summary(self, session_id: int, summary: list):
+        for entry in summary:
             self.index.add(ids=[str(self.index.count()+1)], documents=[entry], metadatas=[{"session_id": session_id}])
     
     def query(self, queries: list):

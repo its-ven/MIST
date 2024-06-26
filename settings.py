@@ -21,7 +21,7 @@ CONFIG_TEMPLATE = [
     "# Auto-update llama.cpp binaries on runtime.",
     "LLAMA_AUTO_UPDATE=True",
     "",
-    "# Name of default Persona JSON",
+    "# Name of default Persona",
     "DEFAULT_PERSONA='MIST'",
     "# Get prompted to accept or override responses"
     "OVERRIDE_RESPONSES=False"

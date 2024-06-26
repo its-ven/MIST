@@ -143,6 +143,9 @@ def execute_function(function_name: str, **kwargs):
                     err = f"ERROR: Function {function_name} failed to execute ({str(e)})"
                     log(LogType.warning, err)
                     return err
+    err = "ERROR: Function does not exist!"
+    log(LogType.warning, err)
+    return err
 
 
 class Toolkit:

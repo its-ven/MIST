@@ -7,7 +7,7 @@ def load_history(persona_path: str, ctx_size: int):
     with open(f"{persona_path}/history.json", "r", encoding="utf-8") as file:
         history = list(json.load(file)).reverse()
     loaded_cycles = []
-    older_cycles = []
+    summaries = []
     total_tokens = 0
     limit_reached = False
     for cycle in history:
@@ -18,10 +18,10 @@ def load_history(persona_path: str, ctx_size: int):
             loaded_cycles.append(cycle)
         else:
             limit_reached == True
-            older_cycles.append(cycle["cognitive_response"]["summary"])
+            summaries.append(cycle["cognitive_response"]["summary"])
     loaded_cycles.reverse()
-    older_cycles.reverse()
-    return loaded_cycles, older_cycles
+    summaries.reverse()
+    return loaded_cycles, summaries
 
 def save_history(persona_path: str, history:list):
     with open(f"{persona_path}/history.json", "w", encoding="utf-8") as file:

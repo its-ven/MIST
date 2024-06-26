@@ -4,7 +4,8 @@ from utils import log, LogType, capfirst, get_dir, Time
 import settings
 
 CONFIG = {
-    "last_boot": "Never. This is my first boot"
+    "last_boot": "Never. This is my first boot",
+    "session_count": 0
 }
 
 class Persona:
@@ -109,5 +110,10 @@ class Persona:
     
     def set_last_boot(self):
         self.config["last_boot"] = Time.full()
+    
+    def set_session_count(self):
+        self.config["session_count"] += 1 
+    
+    def update_config(self):
         with open(os.path.join(self.path, "config.json"), "w", encoding="utf-8") as file:
             file.write(json.dumps(self.config, indent=4, ensure_ascii=False))
