@@ -13,7 +13,8 @@ host = f"{settings.llama_host}:{str(settings.llama_port)}"
 completion_endpoint = f"{host}/completion"
 chat_endpoint = f"{host}/v1/chat/completions"
 infill_endpoint = f"{host}/infill"
-tokenizer_endpoint = f"{host}/tokenize"
+tokenize_endpoint = f"{host}/tokenize"
+detokenize_endpoint = f"{host}/detokenize"
 
 # Strip any escaped stops.
 GLOBAL_STOPS = [
@@ -76,6 +77,10 @@ class SchemaValue:
         if max_items is not None:
             schema["maxItems"] = max_items
         return schema
+    
+    @classmethod
+    def string_enum(cls, enum: list):
+        return {"type": "string", "enum": enum}
 
     @classmethod
     def regex_pattern(cls, pattern: str):
@@ -102,19 +107,19 @@ class SchemaValue:
         return {"type": "object", "properties": keys}
 
     @classmethod
-    def function_schema(cls):
+    def function_schema(cls, function_list: list):
         return {
             "type": "object",
             "properties": {
-                "name": cls.string,
+                "name": cls.string_enum(function_list),
                 "arguments": {"type": "object", "additionalProperties": True}
             },
             "required": ["name", "arguments"]
         }
 
     @classmethod
-    def functions_list(cls):
-        return cls._list(cls.function_schema(), min_items=1)
+    def functions_list(cls, function_list: list):
+        return cls._list(cls.function_schema(function_list), min_items=1)
 
 def make_schema(required: list[str] = [], **keys):
     """
@@ -202,10 +207,22 @@ def _stream(response):
 
 def tokenize(string: str, count: bool = False) -> list[int]:
     load()
-    response = requests.post(tokenizer_endpoint, json={"content": string}).json()
+    response = requests.post(tokenize_endpoint, json={"content": string}).json()
     if count:
         return len(response["tokens"])
     return response["tokens"]
+
+def detokenize(tokens: list, return_list: bool = False) -> list[str]:
+    load()
+    if return_list:
+        detok = []
+        for tok in tokens:
+            response = requests.post(detokenize_endpoint, json={"tokens": [tok]}).json()
+            detok.append(response["content"])
+        return detok
+    else:
+        response = requests.post(detokenize_endpoint, json={"tokens": tokens}).json()
+        return response["content"]
 
 def completion(
 

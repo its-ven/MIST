@@ -138,12 +138,12 @@ def execute_function(function_name: str, **kwargs):
                         return f"User aborted unsafe function '{function_name}'."
                 try:
                     result = function['func'](**kwargs)
-                    return result
+                    return str(result)
                 except Exception as e:
                     err = f"ERROR: Function {function_name} failed to execute ({str(e)})"
                     log(LogType.warning, err)
                     return err
-    err = "ERROR: Function does not exist!"
+    err = "ERROR: Function does not exist! Only use the Functions you have!"
     log(LogType.warning, err)
     return err
 

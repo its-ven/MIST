@@ -32,55 +32,19 @@ def _get_embedding(embedding: Embedding, device: Device):
         active_embeddings[embedding] = embedding_instance
     return active_embeddings[embedding]
 
-class FunctionMemory:
-    """
-        ChromaDB wrapper for simple function-specific memory.
-    """
-    def __init__(self, function_name: str, embedding: Embedding = Embedding.balanced, device = Device.auto):
-        module_path = get_caller_path()
-        log(LogType.system, f"[Memory] Loading embeddings for {function_name}...")
+class ExternalMemory:
+    def __init__(self, persona_name: str, embedding: Embedding = Embedding.balanced, device = Device.auto):
+        log(LogType.boot_sequence, _boot_padding(f"[Memory] Loading external memory..."))
         _embedding = _get_embedding(embedding, device)
-        self.client = chromadb.PersistentClient(f"{module_path}/{function_name}", settings=ChromaSettings(anonymized_telemetry=False))
-        self.collection = self.client.get_or_create_collection(function_name, embedding_function=_embedding, metadata={"hnsw:space": "cosine"})
-
-    def delete(self, where: Where = None, where_document: WhereDocument = None):
-        self.collection.delete(where=where, where_document=where_document)
-
-    def add(self, content: dict):
-        _id = str(self.collection.count() + 1)
-        self.collection.add(ids=[_id], documents=[str(content)])
-    
-    def query(self, query: str, n_results: int = 5, min_score: int = 0.4, where: Where = None, where_document: WhereDocument = None) -> list[dict] | None:
-        get_score = lambda x: round(1 - (x / 2), 3)
-        query_results = self.collection.query(query_texts=[query], n_results=n_results, where=where, where_document=where_document)
-        min_found = get_score(min(query_results["distances"][0]))
-        results = []
-        for i in range(n_results):
-            try:
-                distance = query_results["distances"][0][i]
-                score = get_score(distance)
-                if score >= min_score:
-                    document = query_results["documents"][0][i]
-                    metadata = query_results["metadatas"][0][i]
-                    _id = int(query_results["ids"][0][i])
-                    results.append({"id": _id, "content": document, "metadata": metadata, "score": score})
-            except:
-                pass
-        if results:
-            return results
-        else:
-            log(LogType.warning, f"[Memory] No memories found in {self.collection.name} with minimum score {min_score}! (Min: {min_found})")
-
-class PersonaMemory:
-    def __init__(self, persona_name: str, embedding: Embedding = Embedding.balanced, device: Device = Device.auto):
-        log(LogType.boot_sequence, _boot_padding(f"[Memory] Loading persona memory..."))
-        _embedding = _get_embedding(embedding, device)
-        self.client = chromadb.PersistentClient(f"./personas/{persona_name}/memories", settings=ChromaSettings(anonymized_telemetry=False))
+        self.client = chromadb.PersistentClient(f"./personas/{persona_name}/memories/external", settings=ChromaSettings(anonymized_telemetry=False))
         self.index = self.client.get_or_create_collection("index", embedding_function=_embedding, metadata={"hnsw:space": "cosine"})
 
-    def append_summary(self, session_id: int, summary: list):
-        for entry in summary:
-            self.index.add(ids=[str(self.index.count()+1)], documents=[entry], metadatas=[{"session_id": session_id}])
+    def delete(self, where: Where = None, where_document: WhereDocument = None):
+        self.index.delete(where=where, where_document=where_document)
+
+    def add(self, content: str):
+        _id = str(self.index.count() + 1)
+        self.index.add(ids=[_id], documents=[content])
     
     def query(self, queries: list):
         min_score = 0.5
@@ -98,6 +62,37 @@ class PersonaMemory:
                     if score >= min_score:
                         memories.append(query_results["documents"][0][i])
         if memories:
+            return memories
+        else:
+            return "No relevant external memories found!"
+
+class InternalMemory:
+    def __init__(self, persona_name: str, embedding: Embedding = Embedding.balanced, device: Device = Device.auto):
+        log(LogType.boot_sequence, _boot_padding(f"[Memory] Loading internal memory..."))
+        _embedding = _get_embedding(embedding, device)
+        self.client = chromadb.PersistentClient(f"./personas/{persona_name}/memories/internal", settings=ChromaSettings(anonymized_telemetry=False))
+        self.index = self.client.get_or_create_collection("index", embedding_function=_embedding, metadata={"hnsw:space": "cosine"})
+
+    def add(self, content: list, source: str):
+        for entry in content:
+            self.index.add(ids=[str(self.index.count()+1)], documents=[entry], metadatas=[{"source": source}])
+    
+    def query(self, queries: list, source: str):
+        min_score = 0.5
+        max_per_query = 5
+        get_score = lambda x: round(1 - (x / 2), 3)
+        seen_ids = set()
+        memories = []
+        for query in queries:
+            query_results = self.index.query(query_texts=[query], n_results=max_per_query, where={"source": {"$eq": source}})
+            for i in range(len(query_results["ids"][0])):
+                _id = int(query_results["ids"][0][i])
+                if _id not in seen_ids:
+                    seen_ids.add(_id)
+                    score = get_score(query_results["distances"][0][i])
+                    if score >= min_score:
+                        memories.append(query_results["documents"][0][i])
+        if memories:
             return "\n".join([f"- {memory}" for memory in memories])
         else:
-            return "No memories found!"
+            return "No relevant memories found!"

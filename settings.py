@@ -20,6 +20,10 @@ CONFIG_TEMPLATE = [
     "",
     "# Auto-update llama.cpp binaries on runtime.",
     "LLAMA_AUTO_UPDATE=True",
+    "# Flash attention (for low-end systems)",
+    "LLAMA_FLASH_ATTENTION=True",
+    "# How many layers to offload to GPU",
+    "LLAMA_N_GPU_LAYERS=50",
     "",
     "# Name of default Persona",
     "DEFAULT_PERSONA='MIST'",
@@ -37,13 +41,20 @@ CONFIG_TEMPLATE = [
     "# Core model:",
     "CORE_MODEL='GGUF_PATH'",
     "CORE_SIZE=8192",
+    "CORE_TEMPERATURE = 0.7",
+    "CORE_TOP_P = 0.6",
+    "CORE_MIN_P = 0.5",
+    "CORE_FREQUENCY_PENALTY = 0.7",
+    "CORE_PRESENCE_PENALTY = 0.4",
+    "# Disable any given word/string. Useful to handle hallucinations.",
+    "CORE_LOGIT_BIAS = []",
     "",
     "# Instruct model:",
     "INSTRUCT_MODEL='GGUF_PATH'",
     "INSTRUCT_SIZE=4096",
     "",
-    "# Disable any module by separating module names with commas (default: None).",
-    "DISABLED_MODULES=None",
+    "# Disable modules using string list.",
+    "DISABLED_MODULES=[]",
     "",
     "# These are automatically set.",
     "LLAMA_LATEST_BUILD='b0000'",
@@ -69,14 +80,27 @@ llama_build_type = config.get("LLAMA_BUILD_TYPE").replace(".zip", "")
 llama_host = config.get("LLAMA_HOST")
 llama_port = literal_eval(config.get("LLAMA_PORT"))
 llama_auto_update = literal_eval(config.get("LLAMA_AUTO_UPDATE"))
+llama_flash_attention = literal_eval(config.get("LLAMA_FLASH_ATTENTION"))
+llama_n_gpu_layers  = literal_eval(config.get("LLAMA_N_GPU_LAYERS"))
+
 default_persona = config.get("DEFAULT_PERSONA")
 override_responses = literal_eval(config.get("OVERRIDE_RESPONSES"))
+
 long_context_model = config.get("LONG_CONTEXT_MODEL")
 long_context_size = literal_eval(config.get("LONG_CONTEXT_SIZE"))
+
 core_model = config.get("CORE_MODEL")
 core_size = literal_eval(config.get("CORE_SIZE"))
+core_temperature = literal_eval(config.get("CORE_TEMPERATURE"))
+core_top_p = literal_eval(config.get("CORE_TOP_P"))
+core_min_p = literal_eval(config.get("CORE_MIN_P"))
+core_frequency_penalty = literal_eval(config.get("CORE_FREQUENCY_PENALTY"))
+core_presence_penalty = literal_eval(config.get("CORE_PRESENCE_PENALTY"))
+core_logit_bias = literal_eval(config.get("CORE_LOGIT_BIAS"))
+
 instruct_model = config.get("INSTRUCT_MODEL")
 instruct_size = literal_eval(config.get("INSTRUCT_SIZE"))
+
 disabled_modules = literal_eval(config.get("DISABLED_MODULES"))
 llama_latest_build = config.get("LLAMA_LATEST_BUILD")
 llama_last_check = config.get("LLAMA_LAST_CHECK")

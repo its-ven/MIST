@@ -4,7 +4,7 @@ from utils import log, LogType, capfirst, get_dir, Time
 import settings
 
 CONFIG = {
-    "last_boot": "Never. This is my first boot",
+    "last_boot": "Never. This is my first boot. I have no memories",
     "session_count": 0
 }
 

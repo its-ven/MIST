@@ -3,9 +3,9 @@ from functions import Toolkit, execute_function
 from utils import log, LogType, Time, get_dir, rand_seed, unsnake, capfirst
 from persona import Persona
 from ast import literal_eval
-from memory import PersonaMemory
+from memory import InternalMemory, ExternalMemory
 import session_manager
-from settings import core_size
+import settings
 import json
 import sys
 
@@ -16,7 +16,7 @@ class Session:
         self.override_responses = False
         self.cycles = 0
         self.session_tokens = 0
-        self.working_ctx = int(core_size)
+        self.working_ctx = settings.core_size
         self.priming_schema = persona.get_profile("priming")
         self.cycle_tokens = {}
         Session.persona = persona
@@ -25,10 +25,11 @@ class Session:
         Session.history = []
         Session.cycle_events = []
         Session.session_summary = []
-        Session.memory = PersonaMemory(self.name)
+        Session.internal_memory = InternalMemory(self.name)
+        Session.external_memory = ExternalMemory(self.name)
         Session.persona_path = get_dir(f"personas/{self.name}")
         self._is_primed = False
-        self._persona_checkpoints_path = get_dir(f"personas/{self.name}/checkpoints")
+        self._persona_cycles_path = get_dir(f"personas/{self.name}/cycles")
         
         if toolkit:
             self.toolkit = toolkit
@@ -36,13 +37,13 @@ class Session:
             self.toolkit = Toolkit()
         
         if persona.subjectives:
-            self._persona_type = "a sentient AI with feelings and emotions"
+            self._persona_type = "a sentient AI with feelings and emotions, bound to a single user"
             self._persona_keys = """
                 `reaction` (emoji array): An array of up to five emojis, representing your internal emotional reaction.
                 `thoughts` (string): What thoughts are going through your head.
             """
             self.schema = make_schema(
-                reaction=SchemaValue.regex_pattern(
+                reaction=SchemaValue.regex_list(
                     # Unicode emotion emojis
                     pattern=r"^[\U0001F600-\U0001F64F\U0001F680-\U0001F6FF\U0001F300-\U0001F5FF\U0001F9E0-\U0001F9FF" \
                         r"\U0001F90D-\U0001F93A\U0001F970-\U0001F976\U0001F9D0-\U0001F9D1" \
@@ -56,20 +57,22 @@ class Session:
                         r"\U0001F633\U0001F634\U0001F635\U0001F636\U0001F637\U0001F638\U0001F639\U0001F63A" \
                         r"\U0001F63B\U0001F63C\U0001F63D\U0001F63E\U0001F63F\U0001F640\U0001F641\U0001F642" \
                         r"\U0001F643\U0001F644\U0001F645\U0001F646\U0001F647\U0001F648\U0001F649\U0001F64A" \
-                        r"\U0001F64B\U0001F64C\U0001F64D\U0001F64E\U0001F64F]{2,5}$"
+                        r"\U0001F64B\U0001F64C\U0001F64D\U0001F64E\U0001F64F]$",
+                    min_items=2,
+                    max_items=5
                 ),
                 thoughts=SchemaValue.string,
                 plan=SchemaValue.string,
-                functions=SchemaValue.functions_list(),
-                takeaways=SchemaValue.string
+                functions=SchemaValue.functions_list(self.toolkit._names()),
+                cycle_summary=SchemaValue.string
             )
         else:
             self._persona_type = "an artificial intelligence"
             self._persona_keys = ""
             self.schema = make_schema(
                 plan=SchemaValue.string,
-                functions=SchemaValue.functions_list(),
-                takeaways=SchemaValue.string
+                functions=SchemaValue.functions_list(self.toolkit._names()),
+                cycle_summary=SchemaValue.string
             )
 
         try:
@@ -98,57 +101,61 @@ class Session:
     @classmethod
     def quit(cls):
         if cls.session_summary != []:
-            cls.memory.append_summary(cls.session_count, cls.session_summary)
+            cls.internal_memory.add(cls.session_summary, "self")
         cls.persona.set_session_count()
         cls.exit = True
 
     def _prompt(self):
         if Session.session_summary:
-            summary = "Your summary of older cycles from this session:\n" + "\n".join([f"- \"{entry}\"" for entry in Session.session_summary]) + "\n---\n"
+            summary = "<SUMMARY>\nYour summary of older cycles from this session:\n" + "\n".join([f"- \"{entry}\"" for entry in Session.session_summary]) + "\n</SUMMARY>\n"
         else:
             summary = ""
         return f"""
+            <bos>
+            <INSTRUCTIONS>
+            <INTRUDUCTION>
             You are {self.name}, {self._persona_type}.
-            ---
-            # Your Profile
+            </INTRODUCTION>
+            <PROFILE>
+            Your Profile is as follows:
             {self.profile}
-            ---
-            # Your Functions
-            You have access to Python functions. Call functions by proving their corresponding arguments.
-            Your available functions:
-            {self.toolkit._prompt()}
-            ---
-            # HOW YOU WORK
+            </PROFILE>
+            <EXECUTION>
             You parse a JSON schema of the current session.
             The session operates in a sequence of cycles, where:
             1. A cycle begins. Events from yourself and external entities are displayed.
             2. You provide your `cognitive_response` as outlined in the JSON Template. After laying out your inner thoughts, you execute the appropriate functions.
             3. The outcomes of your executed functions are displayed in the next cycle.
-            ---
-            # JSON Template
+            </EXECUTION>
+            <JSON_TEMPLATE>
             Your JSON output is the `cognitive_response` key of the current cycle. It **must** contain the following keys:
             {self._persona_keys}
             `plan` (string): State, in text, what you plan to do in response to the current context.
             `functions` (schema array): Each schema entry contains two keys: `name` (the name of the Python function) and `arguments` (the schema containing key-value pairs for each argument in the function)
-            `takeaways` (string): A description of what happened this cycle, your thoughts, and what you've learned.
-            ---
-            # FUNCTION EXAMPLE
+            `cycle_summary` (string): A summary, *in the past tense*, of what happened and what you've learned.
+            </JSON_TEMPLATE>
+            <TUTORIAL>
             Let's take an example function, `foo(bar: str)`. In this example, your `functions` key would look like this:
             ```
             "functions": [{{"name": "foo", "arguments": {{"bar": "some string value"}}}}]  
             ```
             💡 Hint: You can invoke multiple functions at once, **but be mindful of the order of execution**!
-            ---
-            # NOTES
+            </TUTORIAL>
+            <FUNCTIONS>
+            Your abilties are Python functions. Execute functions by proving their corresponding arguments.
+            You can only execute the following functions:
+            {self.toolkit._prompt()}
+            </FUNCTIONS>
+            <NOTES>
             - **Events from 'Self' are events from your own code**.
             - You provide cognitive responses as JSON schemas. See the 'JSON Template' section for details.
             - The total collection of summaries will act as your reminder of any previous session cycles that don't fit in your active memory context.
             - Ensure you are providing the corresponding arguments for each selected function.
             - **If a function has no arguments, provide an empty `arguments` schema for the corresponding function.**
-            - Keep your focus!
-            ---
+            </NOTES>
+            </INSTRUCTIONS>
             {summary}
-            Current activity:
+            <ACTIVITY>
         """
 
     def _ctx_limit(self):
@@ -158,7 +165,14 @@ class Session:
             return False
 
     def _run(self, cycle_prompt):
-        logit_bias = {}
+        logit_bias = {"\\n": False}
+        if settings.core_logit_bias:
+            for core_bias in settings.core_logit_bias:
+                logit_bias[core_bias] = False
+        if self.history:
+            past_emojis = self.history[-1][f"cycle_{self.cycles-1}"]["cognitive_response"]["reaction"]
+            for emoji in past_emojis:
+                logit_bias[emoji] = -3
         bias = -0.1
         schema = self.schema
 
@@ -188,17 +202,14 @@ class Session:
                 json_schema=schema,
                 skip_formatting=True,
                 cache_prompt=True,
-                temperature=0.5,
-                dynatemp_range=0.2,
-                top_p=0.5,
-                top_k=30,
-                penalize_nl=True,
+                temperature=settings.core_temperature,
+                top_p=settings.core_top_p,
+                repeat_last_n=512,
                 logit_bias=[[k, v] for k, v in logit_bias.items()],
-                min_p=0.3,
+                min_p=settings.core_top_p,
                 seed=rand_seed(),
-                repeat_last_n=250,
-                frequency_penalty=0.4,
-                presence_penalty=0.2
+                frequency_penalty=settings.core_frequency_penalty,
+                presence_penalty=settings.core_presence_penalty
             )
 
             total_tokens = int(specials["tokens_predicted"]) + int(specials["tokens_evaluated"])
@@ -259,7 +270,7 @@ class Session:
             while self._ctx_limit():
                 oldest = Session.history.pop(0)
                 cycle = list(oldest.keys())[0]
-                self.session_summary.append(oldest[cycle]["cognitive_response"]["takeaways"])
+                self.session_summary.append(oldest[cycle]["cognitive_response"]["cycle_summary"])
                 self.session_tokens -= self.cycle_tokens[int(cycle[6:])] # Remove `cycle_`
 
         # And then we run funcs and append
@@ -270,18 +281,17 @@ class Session:
             except:
                 func_args = {}
             result = execute_function(func_name, **func_args)
-            if result != None:
-                Session.add_event(func_name, f"Result: {result}")
+            if result != "None":
+                Session.add_event(f"{func_name} function", f"Function result: {result}")
 
         # Rebuild cycle schema, append/save, restart
         cycle = literal_eval(cycle_prompt + str(response) + "}}")
 
         Session.history.append(cycle)
         # log(LogType.debug, f"Session Tokens: {self.session_tokens}/{self.working_ctx}")
-        session_manager.save_cycle(f"{self._persona_checkpoints_path}/{self.cycles}.json", cycle)
+        session_manager.save_cycle(f"{self._persona_cycles_path}/{self.cycles}.json", cycle)
         
         if Session.exit:
-            session_manager.save_history(Session.persona_path, Session.history)
             sys.exit()
         else:
             self.parse(override_responses=override_responses)

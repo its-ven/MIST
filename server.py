@@ -68,7 +68,6 @@ def update():
                         download_url = str(asset["browser_download_url"])
                         _download(download_url)
                         settings.set_llama_build(latest_build)
-                        log(LogType.system, "[Server] llama.cpp updated!", with_prefix=False)
                         break
                 else:
                     raise log(LogType.error, f"[Server] llama.cpp build {settings.llama_build_type} not found! Check spelling?")
@@ -96,17 +95,16 @@ def load(model: Model = Model.core):
             os.path.join(get_dir("llamacpp"), server_ex),
             "-m", model[0],
             "--mlock",
-            "-ngl", "999", # Bad?
             "--port", str(settings.llama_port),
             "-v",
-            "-c", str(model[1]),
-            "-fa",
-            "--log-disable"
+            "-c", str(model[1])
         ]
     
-    # A little janky but it works
-    args.extend(override_tokenizer(model[0]))
-    
+    if settings.llama_flash_attention:
+        args.append("-fa")
+    if settings.llama_n_gpu_layers > 0:
+        args.extend(["-ngl", str(settings.llama_n_gpu_layers)])
+
     # Restart server if new model
     if model[0] != current_model:
         if is_running():

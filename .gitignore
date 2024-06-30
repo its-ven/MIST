@@ -4,9 +4,10 @@ tests.py
 llama.log
 TODO.txt
 core copy.py
-personas/MIST/checkpoints
+personas/MIST/cycles
 personas/MIST/memories
 personas/MIST/config.json
+personas/MIST/history.json
 llamacpp
 embeddings
 finetuning.py
